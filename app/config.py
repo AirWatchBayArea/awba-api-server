@@ -1,0 +1,1 @@
+ESDR_API_ROOT_URL = "https://esdr.cmucreatelab.org/api/v1"
