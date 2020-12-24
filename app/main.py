@@ -1,4 +1,3 @@
-import hypercorn
 import requests
 import socket
 from fastapi import FastAPI
