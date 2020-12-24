@@ -1,1 +1,1 @@
-web: hypercorn -b 0.0.0.0:${PORT} app.main:app --debug --reload
+web: uvicorn --host=0.0.0.0 --port={$PORT:-5000} app.main:app
