@@ -7,7 +7,7 @@ app = FastAPI(debug=True, title="AWBA API Server", description="This provides AW
 app.include_router(esdr_v1.router, prefix="/api/v1")
 hostname = socket.gethostname()
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def read_root():
     return {
         "name": "AWBA API Server",
