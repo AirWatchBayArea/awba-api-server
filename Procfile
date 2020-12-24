@@ -1,1 +1,1 @@
-web: hypercorn app.main:app --reload
+web: hypercorn -b 0.0.0.0:${PORT} app.main:app
