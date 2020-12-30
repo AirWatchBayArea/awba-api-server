@@ -21,9 +21,3 @@ class EsdrBackend:
             return response.json().get("data")
         else:
             return None
-
-    def Get_Something(self):
-        return [{"name": "value"}]
-
-    def Other_Function(self, feed_id):
-        return [{"feed": feed_id}]

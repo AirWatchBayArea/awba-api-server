@@ -1,4 +1,4 @@
-ESDR_FEEDS = [
+ESDR_FEEDS = (
     {
         "id": 0,
         "name": "Atchison Village", 
@@ -78,5 +78,6 @@ ESDR_FEEDS = [
         "name": "BAAQMD", 
         "feedIds": [4850, 4846, 4857, 4849]
     }
-]
+)
 
+WIND_FEEDS = [26394, 38294, 38684, 38816]
