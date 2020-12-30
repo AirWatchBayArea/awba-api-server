@@ -5,6 +5,12 @@ import psycopg2
 
 class Database:
 
+    # For local debugging purposes with PostgreSQL, do the following steps:
+    # 1. Install postgresql and psycopg2 based on the following document:
+    #    - https://devcenter.heroku.com/articles/heroku-postgresql#local-setup
+    # 2. If using Linux / Mac, use the following export command (ignore the export in the above doc):
+    #    - export DATABASE_URL=postgres:///$(whoami)
+    
     AWBA_LOCATIONS = "awba_locations"
     AWBA_FEEDS = "awba_feeds"
     DATABASE_URL = os.environ['DATABASE_URL']
