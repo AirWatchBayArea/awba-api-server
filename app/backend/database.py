@@ -81,6 +81,7 @@ class Database:
             print("Table [{0}]: exists".format(table_name))
             return True
         except:
+            conn.rollback()
             print("Table [{0}]: does not exist".format(table_name))
             return False
 
@@ -101,11 +102,13 @@ class Database:
 
         try:
             cur.execute(sql)
+            conn.commit()
             print("Table [{0}]: created".format(self.AWBA_FEEDS))
             return True
         except Exception as e:
+            conn.rollback()
             print("Table [{0}]: not created. Reason: {1}".format(self.AWBA_FEEDS, e))
-            raise e
+            return False
             
     # Creates the location table if it doesn't already exist
     def Create_Location_Table(self, conn):
@@ -120,11 +123,13 @@ class Database:
 
         try:
             cur.execute(sql)
+            conn.commit()
             print("Table [{0}]: created".format(self.AWBA_LOCATIONS))
             return True
         except Exception as e:
+            conn.rollback()
             print("Table [{0}]: not created.  Reason: {1}".format(self.AWBA_LOCATIONS, e))
-            raise e
+            return False
             
     # Deletes a location with feed ids within the database
     def Delete_Location(self, location_id):
@@ -327,17 +332,12 @@ class Database:
     # If they don't, create them so they're available
     def Verify_Tables(self):
         # Create a connection to the database
-        conn = psycopg2.connect(self.DATABASE_URL, sslmode='require')
+        conn = self.New_Connection()
 
         try:
             if not(self.Check_Table(conn, self.AWBA_LOCATIONS)):
                 self.Create_Location_Table(conn)
             if not(self.Check_Table(conn, self.AWBA_FEEDS)):
                 self.Create_Feeds_Table(conn)
-
-            conn.commit()
-        except:
-            conn.rollback()
         finally:
             conn.close()
-
