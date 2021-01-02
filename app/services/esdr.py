@@ -1,6 +1,7 @@
 from ..backend.database import Database
 from ..backend.esdr import EsdrBackend
 from ..models.esdr import Location
+# from .database import DatabaseService
 import aiohttp
 import asyncio
 
@@ -9,6 +10,7 @@ class EsdrService:
     def __init__(self):
         self.backend = EsdrBackend()
         self.database = Database()
+        # self.database_service = DatabaseService()
 
     # Gets the feed data synchronously
     def Get_Feed_Data(self, feed_id):
@@ -17,7 +19,7 @@ class EsdrService:
 
     # Gets the feed data asynchronously
     async def Get_Location_Data_Async(self, location_id):
-        location = self.Get_Location(location_id)
+        location = self.database.Get_Location(location_id)
         tasks = []
 
         async with aiohttp.ClientSession() as session:
@@ -29,7 +31,7 @@ class EsdrService:
 
     # Gets the feed data synchronously
     def Get_Location_Data_Sync(self, location_id):
-        location = self.Get_Location(location_id)
+        location = self.database.Get_Location(location_id)
         result = []
 
         for feedId in location.get("feedIds"):

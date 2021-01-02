@@ -1,5 +1,6 @@
 import requests
 from fastapi import FastAPI
+from .backend.database import Database
 from .routes import feeds, locations
 
 tags_metadata = [
@@ -17,6 +18,12 @@ app = FastAPI(debug=True,
     openapi_tags=tags_metadata,
     title="AWBA API Server", 
     version="1.0.0")
-# app.include_router(feeds.router, prefix="/api/v1")
+
+@app.on_event("startup")
+async def Verify_Database():
+    # Make sure the tables exist
+    database = Database()
+    database.Verify_Tables()
+
 app.include_router(feeds.router)
 app.include_router(locations.router)

@@ -14,25 +14,22 @@ class Database:
     # 2. If using Linux / Mac, use the following export command (ignore the export step in the above doc link):
     #    - export DATABASE_URL=postgres:///$(whoami)
 
-    AWBA_LOCATIONS = "awba_locations"
     AWBA_FEEDS = "awba_feeds"
+    AWBA_LOCATIONS = "awba_locations"
     DATABASE_URL = os.environ['DATABASE_URL']
 
-    def __init__(self):
+    # def __init__(self):
         # Create a connection to the database
-        self.conn = psycopg2.connect(self.DATABASE_URL, sslmode='require')
+        # self.conn = psycopg2.connect(self.DATABASE_URL, sslmode='require')
 
-        # Make sure the tables exist for the API.
-        # Create the tables if necessary.
-        if not(self.Check_Table(self.AWBA_LOCATIONS)):
-            self.Create_Location_Table()
-        if not(self.Check_Table(self.AWBA_FEEDS)):
-            self.Create_Feeds_Table()
+    def New_Connection(self):
+        return psycopg2.connect(self.DATABASE_URL, sslmode='require')
 
     # Adds a new location with feed ids to the database
     def Add_Location(self, location: Location):
         result = {"new_id": -1}
-        cur = self.conn.cursor()
+        conn = self.New_Connection()
+        cur = conn.cursor()
 
         try:
             # Insert into Locations table
@@ -61,21 +58,22 @@ class Database:
 
             # Finally, commit the transaction
             if result["new_id"] > 0:
-                self.conn.commit()
+                conn.commit()
             else:
                 raise ProgrammingError("No location added")
         except Exception as e:
-            self.conn.rollback()
+            conn.rollback()
             result["new_id"] = -1
             result["error_message"] = e
             print(e)
         finally:
             cur.close()
+            conn.close()
             return result
         
     # Simple check to make sure a table exists
-    def Check_Table(self, table_name):
-        cur = self.conn.cursor()
+    def Check_Table(self, conn, table_name):
+        cur = conn.cursor()
         sql = "SELECT * FROM {0} WHERE 0=1;".format(table_name)
 
         try:
@@ -87,8 +85,8 @@ class Database:
             return False
 
     # Creates the feeds table if it doesn't already exist
-    def Create_Feeds_Table(self):
-        cur = self.conn.cursor()
+    def Create_Feeds_Table(self, conn):
+        cur = conn.cursor()
         sql = (
                 "CREATE TABLE {0} ("
                 " id INT GENERATED ALWAYS AS IDENTITY,"
@@ -103,17 +101,15 @@ class Database:
 
         try:
             cur.execute(sql)
-            self.conn.commit()
             print("Table [{0}]: created".format(self.AWBA_FEEDS))
             return True
         except Exception as e:
-            self.conn.rollback()
             print("Table [{0}]: not created. Reason: {1}".format(self.AWBA_FEEDS, e))
-            return False
+            raise e
             
     # Creates the location table if it doesn't already exist
-    def Create_Location_Table(self):
-        cur = self.conn.cursor()
+    def Create_Location_Table(self, conn):
+        cur = conn.cursor()
         sql = (
                 "CREATE TABLE {0} ("
                 " location_id INT GENERATED ALWAYS AS IDENTITY,"
@@ -124,17 +120,16 @@ class Database:
 
         try:
             cur.execute(sql)
-            self.conn.commit()
             print("Table [{0}]: created".format(self.AWBA_LOCATIONS))
             return True
         except Exception as e:
-            self.conn.rollback()
             print("Table [{0}]: not created.  Reason: {1}".format(self.AWBA_LOCATIONS, e))
-            return False
+            raise e
             
     # Deletes a location with feed ids within the database
     def Delete_Location(self, location_id):
-        cur = self.conn.cursor()
+        conn = self.New_Connection()
+        cur = conn.cursor()
         result = {}
 
         try:
@@ -157,12 +152,13 @@ class Database:
             result["location_rows"] = cur.rowcount
 
             # Finally, commit the transaction
-            self.conn.commit()
+            conn.commit()
         except Exception as e:
-            self.conn.rollback()
+            conn.rollback()
             print(e)
         finally:
             cur.close()
+            conn.close()
             return result
         
     def Get_Location(self, location_id):
@@ -172,7 +168,8 @@ class Database:
         #     return filtered_list[0]
         # else:
         #     return None
-        cur = self.conn.cursor()
+        conn = self.New_Connection()
+        cur = conn.cursor()
         result = {}
         sql = (
                 "SELECT l.location_id, l.location_name, f.feed_id "
@@ -191,6 +188,8 @@ class Database:
                 result["name"] = row[1]
                 result.setdefault("feedIds", []).append(row[2])
         finally:
+            cur.close()
+            conn.close()
             if result != {}:
                 return result
             else:
@@ -198,7 +197,8 @@ class Database:
 
     def Get_Locations(self, name, feedIds):
         # return ESDR_FEEDS
-        cur = self.conn.cursor()
+        conn = self.New_Connection()
+        cur = conn.cursor()
         result = []
         sql = (
                 "SELECT l.location_id, l.location_name, f.feed_id "
@@ -264,6 +264,8 @@ class Database:
             if (item != {}):
                 result.append(item)
         finally:
+            cur.close()
+            conn.close()
             return result
 
     def Get_Wind_Feeds(self):
@@ -271,7 +273,8 @@ class Database:
 
     # Updates a location within the database
     def Update_Location(self, location_id: int, location: Location):
-        cur = self.conn.cursor()
+        conn = self.New_Connection()
+        cur = conn.cursor()
         result = {"location_rows": 0, "feed_rows": 0}
 
         try:
@@ -309,13 +312,32 @@ class Database:
 
             # Finally, commit the transaction
             if (result["location_rows"] > 0) or (result["feed_rows"] > 0):
-                self.conn.commit()
+                conn.commit()
             else:
                 raise ProgrammingError("No locations updated")
         except Exception as e:
-            self.conn.rollback()
+            conn.rollback()
             print(e)
         finally:
             cur.close()
+            conn.close()
             return result
         
+    # Make sure the database tables exist
+    # If they don't, create them so they're available
+    def Verify_Tables(self):
+        # Create a connection to the database
+        conn = psycopg2.connect(self.DATABASE_URL, sslmode='require')
+
+        try:
+            if not(self.Check_Table(conn, self.AWBA_LOCATIONS)):
+                self.Create_Location_Table(conn)
+            if not(self.Check_Table(conn, self.AWBA_FEEDS)):
+                self.Create_Feeds_Table(conn)
+
+            conn.commit()
+        except:
+            conn.rollback()
+        finally:
+            conn.close()
+
