@@ -1,11 +1,15 @@
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 class Location(BaseModel):
-    id: int
+    id: Optional[int]
     name: str
-    feedIds: List[int] = []
+    feedIds: List[int]
 
+class LocationItems(BaseModel):
+    Succeeded: List[Location]
+    Failed: List[Location]
+    
 class ChannelData(BaseModel):
     minTimeSecs: float
     maxTimeSecs: float
