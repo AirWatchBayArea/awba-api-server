@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List
 from ..services.database import DatabaseService
 from ..models.esdr import *
+from ..oauth import *
 
 router = APIRouter()
 service = DatabaseService()
@@ -11,7 +12,8 @@ service = DatabaseService()
     name="Get Locations",
     description="Returns the list of available locations with their ESDR Feed IDs",
     response_model=List[Location])
-async def get_locations(name: Optional[str] = Query(
+async def get_locations(token: str = Depends(oauth2_scheme),
+                        name: Optional[str] = Query(
                             None, 
                             title="Location Name (Optional)", 
                             description="The name of a location (case insensitive)", 
