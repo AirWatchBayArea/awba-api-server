@@ -7,11 +7,11 @@ class UserReportsBackend:
     QRY_SMELL_REPORTS = "{0}/smell_reports?format=json&client_ids=2&timezone_string=America/Los_Angeles"
 
     # Gets the user_reports asynchronously (uses asyncio's ClientRequest and ClientResponse)
-    async def Get_User_Reports_Async(self):
+    async def Get_User_Reports_Async(self, session):
         async with session.get(self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL)) as response:
             if response.status == 200:
                 result = await response.json()
-                return result.get("data")
+                return result
             else:
                 return None
 

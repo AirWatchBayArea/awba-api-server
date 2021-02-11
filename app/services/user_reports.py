@@ -11,6 +11,6 @@ class UserReportsService:
         self.database = Database()
 
     # Gets user reports from Smell Pittsburgh
-    def Get_User_Reports(self):
+    async def Get_User_Reports_Sync(self):
         reports = self.backend.Get_User_Reports_Sync()
         return reports
