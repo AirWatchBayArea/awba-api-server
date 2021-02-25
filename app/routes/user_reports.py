@@ -9,8 +9,8 @@ service = UserReportsService()
 # Feeds
 @router.get('/user-reports',
     tags=["User Reports"],
-    name="Get user reports",
-    description="Returns user-submitted smell reports",
+    name="Get all AWBA user reports",
+    description="Returns all user-submitted smell reports for the AWBA client",
     responses={200: {"model": List[UserReport]}, 204: {}, 404: {}})
 async def get_user_reports():
     result = await service.Get_User_Reports_Sync()
@@ -22,8 +22,8 @@ async def get_user_reports():
 
 @router.get('/user-reports/location/{location_id}',
     tags=["User Reports"],
-    name="Get user reports for a given location ID",
-    description="Returns user-submitted smell reports for a specific location ID",
+    name="Get user reports for a given location",
+    description="Returns user-submitted smell reports for a specific location",
     responses={200: {"model": List[UserReport]}, 204: {}, 404: {}})
 async def get_user_reports(location_id: int):
     result = await service.Get_User_Reports_Location_Sync(location_id)
