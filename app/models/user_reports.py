@@ -10,6 +10,12 @@ class Comments(BaseModel):
     tags: List[str]
     img: Dict[str, Image]
 
+class LocationBounds(BaseModel):
+    maxLatitude: float
+    minLatitude: float
+    maxLongitude: float
+    minLongitude: float
+
 class UserReport(BaseModel):
     latitude: float
     longitude: float
