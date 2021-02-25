@@ -11,7 +11,7 @@ class UserReportsBackend:
 
     # Gets the user_reports asynchronously (uses asyncio's ClientRequest and ClientResponse)
     async def Get_User_Reports_Async(self, session):
-        query = self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL) + QRY_SMELL_AWBA_CLIENT
+        query = self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL) + self.QRY_SMELL_AWBA_CLIENT
 
         async with session.get(query) as response:
             if response.status == 200:
@@ -22,7 +22,7 @@ class UserReportsBackend:
 
     # Gets the user_reports synchronously (uses requests/response)
     def Get_User_Reports_Sync(self):
-        query = self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL) + QRY_SMELL_AWBA_CLIENT
+        query = self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL) + self.QRY_SMELL_AWBA_CLIENT
 
         response = requests.get(query)
         if response.status_code == 200:
