@@ -37,7 +37,6 @@ class UserReportsService:
         bounds.maxLatitude = bounds.maxLatitude + 0.01
         bounds.minLongitude = bounds.minLongitude - 0.01
         bounds.maxLongitude = bounds.maxLongitude + 0.01
-        print(bounds)
 
         reports = self.backend.Get_User_Reports_Location_Sync(bounds)
         return reports

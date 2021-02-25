@@ -5,12 +5,15 @@ import requests
 
 class UserReportsBackend:
 
+    QRY_SMELL_AWBA_CLIENT = "&client_ids=2"
     QRY_SMELL_BBOX = "&latlng_bbox={0},{1},{2},{3}"
-    QRY_SMELL_REPORTS = "{0}/smell_reports?format=json&client_ids=2&timezone_string=America/Los_Angeles"
+    QRY_SMELL_REPORTS = "{0}/smell_reports?format=json&timezone_string=America/Los_Angeles"
 
     # Gets the user_reports asynchronously (uses asyncio's ClientRequest and ClientResponse)
     async def Get_User_Reports_Async(self, session):
-        async with session.get(self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL)) as response:
+        query = self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL) + QRY_SMELL_AWBA_CLIENT
+
+        async with session.get(query) as response:
             if response.status == 200:
                 result = await response.json()
                 return result
@@ -19,7 +22,9 @@ class UserReportsBackend:
 
     # Gets the user_reports synchronously (uses requests/response)
     def Get_User_Reports_Sync(self):
-        response = requests.get(self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL))
+        query = self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL) + QRY_SMELL_AWBA_CLIENT
+
+        response = requests.get(query)
         if response.status_code == 200:
             return response.json()
         else:
@@ -29,7 +34,6 @@ class UserReportsBackend:
     def Get_User_Reports_Location_Sync(self, bounds: LocationBounds):
         query = self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL)
         bbox = self.QRY_SMELL_BBOX.format(bounds.minLatitude, bounds.minLongitude, bounds.maxLatitude, bounds.maxLongitude)
-        print(query + bbox)
 
         response = requests.get(query + bbox)
         if response.status_code == 200:
