@@ -33,10 +33,10 @@ class UserReportsService:
                 bounds.maxLongitude = feed['longitude']
           
         # Expand bounds slightly
-        bounds.minLatitude = bounds.minLatitude - 0.01
-        bounds.maxLatitude = bounds.maxLatitude + 0.01
-        bounds.minLongitude = bounds.minLongitude - 0.01
-        bounds.maxLongitude = bounds.maxLongitude + 0.01
+        bounds.minLatitude = bounds.minLatitude - 0.001
+        bounds.maxLatitude = bounds.maxLatitude + 0.001
+        bounds.minLongitude = bounds.minLongitude - 0.001
+        bounds.maxLongitude = bounds.maxLongitude + 0.001
 
         reports = self.backend.Get_User_Reports_Location_Sync(bounds)
         return reports

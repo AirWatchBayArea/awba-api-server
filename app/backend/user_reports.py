@@ -35,7 +35,7 @@ class UserReportsBackend:
     # Gets the user_reports synchronously (uses requests/response)
     def Get_User_Reports_Location_Sync(self, bounds: LocationBounds):
         query = self.QRY_SMELL_REPORTS.format(SMELL_PITTSBURGH_API_ROOT_URL)
-        bbox = self.QRY_SMELL_BBOX.format(bounds.minLatitude, bounds.minLongitude, bounds.maxLatitude, bounds.maxLongitude)
+        bbox = self.QRY_SMELL_BBOX.format(bounds.maxLatitude, bounds.minLongitude, bounds.minLatitude, bounds.maxLongitude)
         #print(query + bbox)
 
         response = requests.get(query + bbox)
