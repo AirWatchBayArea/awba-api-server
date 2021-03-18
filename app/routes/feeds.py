@@ -46,6 +46,19 @@ async def get_location_data_sync(location_id: int):
     else:
         return HTTPException(status_code=404, detail="No data found")
 
+@router.get('/feeds/region/{region_id}',
+    tags=["Feeds"],
+    name="Get Region Feed Data",
+    description="Returns data for all feeds in a particular region",
+    responses={200: {"model": List[FeedData]}, 404: {}})
+async def get_region_data(region_id: int):
+    result = await service.Get_Region_Data_Async(region_id)
+
+    if result != None:
+        return result
+    else:
+        return HTTPException(status_code=404, detail="No data found")
+
 @router.get('/feeds/wind',
     tags=["Feeds"],
     name="Get Wind Data",

@@ -464,6 +464,64 @@ class Database:
             else:
                 return None
 
+    def Get_Region_Locations(self, regionId):
+        # return ESDR_FEEDS
+        conn = self.New_Connection()
+        cur = conn.cursor()
+        result = []
+        sql = (
+                "SELECT l.location_id, l.location_name, l.region_id, r.region_name, f.feed_id "
+                "FROM {0} as l "
+                "JOIN {1} as f on (l.location_id = f.location_id) "
+                "LEFT OUTER JOIN {2} as r on (l.region_id = r.region_Id) "
+        ).format(self.AWBA_LOCATIONS, self.AWBA_FEEDS, self.AWBA_REGIONS)
+
+        # build where clause based on optional search parameters
+        search_cond = ""
+
+        if not(regionId is None):
+            search_cond = "(l.region_id = {0})".format(regionId)
+
+        # Finish sql statement
+        if (search_cond != ""):
+            sql = sql + "WHERE " + search_cond
+
+        sql = sql + " ORDER BY l.location_id, f.feed_id;"
+
+        try:
+            cur.execute(sql)
+            rows = cur.fetchall()
+            curId = -1
+            item = {}
+
+            for row in rows:
+                # If this is a new LocationId, create a new record
+                if (row[0] != curId):
+                    # Set new curId
+                    curId = row[0]
+
+                    # Add current item if it's a Location
+                    if (item != {}):
+                        result.append(item)
+                        item = {}
+                    
+                    # Assign basic values
+                    item["id"] = row[0]
+                    item["name"] = row[1]
+                    item["regionId"] = row[2]
+                    item["regionName"] = row[3]
+
+                # Add the field ID
+                item.setdefault("feedIds", []).append(row[4])
+
+            # Add the last item
+            if (item != {}):
+                result.append(item)
+        finally:
+            cur.close()
+            conn.close()
+            return result
+
     def Get_Regions(self, name):
         # return ESDR_FEEDS
         conn = self.New_Connection()

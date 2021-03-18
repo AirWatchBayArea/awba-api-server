@@ -40,6 +40,19 @@ class EsdrService:
 
         return result
 
+    # Gets the feed data asynchronously
+    async def Get_Region_Data_Async(self, region_id):
+        locations = self.database.Get_Region_Locations(region_id)
+        tasks = []
+
+        async with aiohttp.ClientSession() as session:
+            for location in locations:
+                for feedId in location.get("feedIds"):
+                    tasks.append(self.backend.Get_Feed_Data_Async(session, feedId))
+            result = await asyncio.gather(*tasks)
+
+        return result
+
     # Gets the wind feed data asynchronously
     async def Get_Wind_Data_Async(self):
         feeds = self.database.Get_Wind_Feeds()
