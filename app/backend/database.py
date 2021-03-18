@@ -1,5 +1,5 @@
 from ..feeds import ESDR_FEEDS, WIND_FEEDS
-from ..models.esdr import Location
+from ..models.esdr import Location, Region
 from fastapi import HTTPException
 from psycopg2._psycopg import ProgrammingError
 from typing import Dict, List
@@ -16,6 +16,7 @@ class Database:
 
     AWBA_FEEDS = "awba_feeds"
     AWBA_LOCATIONS = "awba_locations"
+    AWBA_REGIONS = "awba_regions"
     DATABASE_URL = os.environ['DATABASE_URL']
 
     # def __init__(self):
@@ -25,6 +26,42 @@ class Database:
     def New_Connection(self):
         return psycopg2.connect(self.DATABASE_URL, sslmode='require')
 
+    # Adds a new constraint to a column
+    def Add_Column_Constraint(self, conn, table_name, constraint_name, constraint_definition):
+        cur = conn.cursor()
+        sql = (
+                "ALTER TABLE {0}"
+                " ADD CONSTRAINT {1} {2};"
+        ).format(table_name, constraint_name, constraint_definition)
+
+        try:
+            cur.execute(sql)
+            conn.commit()
+            print("Constraint [{0}]: created".format(constraint_name))
+            return True
+        except Exception as e:
+            conn.rollback()
+            print("Constraint [{0}]: not created.  Reason: {1}".format(constraint_name, e))
+            return False
+            
+    # Adds a new column to a table
+    def Add_Table_Column(self, conn, table_name, column_name, data_type):
+        cur = conn.cursor()
+        sql = (
+                "ALTER TABLE {0}"
+                " ADD COLUMN {1} {2};"
+        ).format(table_name, column_name, data_type)
+
+        try:
+            cur.execute(sql)
+            conn.commit()
+            print("Column [{0}]: created".format(column_name))
+            return True
+        except Exception as e:
+            conn.rollback()
+            print("Column [{0}]: not created.  Reason: {1}".format(column_name, e))
+            return False
+            
     # Adds a new location with feed ids to the database
     def Add_Location(self, location: Location):
         result = {"new_id": -1}
@@ -35,13 +72,13 @@ class Database:
             # Insert into Locations table
             sql = (
                     "INSERT INTO {0}"
-                    " (location_id, location_name) "
+                    " (location_id, location_name, region_id) "
                     "VALUES"
-                    " (DEFAULT, %s) "
+                    " (DEFAULT, %s, %s) "
                     "RETURNING location_id;"
             ).format(self.AWBA_LOCATIONS)
 
-            cur.execute(sql, (location.name,))
+            cur.execute(sql, (location.name, location.regionId))
             result["new_id"] = cur.fetchone()[0]
 
             if result["new_id"] > 0:
@@ -71,6 +108,70 @@ class Database:
             conn.close()
             return result
         
+    # Adds a new region with location ids to the database
+    def Add_Region(self, region: Region):
+        result = {"new_id": -1}
+        conn = self.New_Connection()
+        cur = conn.cursor()
+
+        try:
+            # Insert into Locations table
+            sql = (
+                    "INSERT INTO {0}"
+                    " (region_id, region_name) "
+                    "VALUES"
+                    " (DEFAULT, %s) "
+                    "RETURNING region_id;"
+            ).format(self.AWBA_REGIONS)
+
+            cur.execute(sql, (region.name,))
+            result["new_id"] = cur.fetchone()[0]
+
+            # Create comma-delimited list of locations
+            if not(region.locationIds is None):
+                locationList = ",".join(str(id) for id in region.locationIds)
+            else:
+                locationList = ""
+
+            if (result["new_id"] > 0) and (locationList != ""):
+                # Update Location table
+                sql = (
+                    "UPDATE {0}"
+                    " SET region_id = {1}"
+                    " WHERE location_id in ({2});"
+                ).format(self.AWBA_LOCATIONS, result["new_id"], locationList)
+
+                cur.execute(sql)
+
+            # Finally, commit the transaction
+            if result["new_id"] > 0:
+                conn.commit()
+            else:
+                raise ProgrammingError("No region added")
+        except Exception as e:
+            conn.rollback()
+            result["new_id"] = -1
+            result["error_message"] = e
+            print(e)
+        finally:
+            cur.close()
+            conn.close()
+            return result
+        
+    # Simple check to make sure a column exists in a table
+    def Check_Column(self, conn, table_name, column_name):
+        cur = conn.cursor()
+        sql = "SELECT {0} FROM {1} WHERE 0=1;".format(column_name, table_name)
+
+        try:
+            cur.execute(sql)
+            print("Column [{0}]: exists".format(column_name))
+            return True
+        except:
+            conn.rollback()
+            print("Column [{0}]: does not exist".format(column_name))
+            return False
+
     # Simple check to make sure a table exists
     def Check_Table(self, conn, table_name):
         cur = conn.cursor()
@@ -111,7 +212,7 @@ class Database:
             return False
             
     # Creates the location table if it doesn't already exist
-    def Create_Location_Table(self, conn):
+    def Create_Locations_Table(self, conn):
         cur = conn.cursor()
         sql = (
                 "CREATE TABLE {0} ("
@@ -129,6 +230,27 @@ class Database:
         except Exception as e:
             conn.rollback()
             print("Table [{0}]: not created.  Reason: {1}".format(self.AWBA_LOCATIONS, e))
+            return False
+            
+    # Creates the regions table if it doesn't already exist
+    def Create_Regions_Table(self, conn):
+        cur = conn.cursor()
+        sql = (
+                "CREATE TABLE {0} ("
+                " region_id INT GENERATED ALWAYS AS IDENTITY,"
+                " region_name VARCHAR(80),"
+                " PRIMARY KEY(region_id)"
+                ");"
+        ).format(self.AWBA_REGIONS)
+
+        try:
+            cur.execute(sql)
+            conn.commit()
+            print("Table [{0}]: created".format(self.AWBA_REGIONS))
+            return True
+        except Exception as e:
+            conn.rollback()
+            print("Table [{0}]: not created.  Reason: {1}".format(self.AWBA_REGIONS, e))
             return False
             
     # Deletes a location with feed ids within the database
@@ -166,6 +288,42 @@ class Database:
             conn.close()
             return result
         
+    # Deletes a region with location ids within the database
+    def Delete_Region(self, region_id):
+        conn = self.New_Connection()
+        cur = conn.cursor()
+        result = {}
+
+        try:
+            # Update Location table
+            sql = (
+                "UPDATE {0}"
+                " SET region_id = NULL"
+                " WHERE region_id = %s;"
+            ).format(self.AWBA_LOCATIONS)
+
+            cur.execute(sql, (region_id,))
+            result["location_rows"] = cur.rowcount
+
+            # Delete the Region table
+            sql = (
+                    "DELETE FROM {0}"
+                    " WHERE region_id = %s;"
+            ).format(self.AWBA_REGIONS)
+
+            cur.execute(sql, (region_id,))
+            result["region_rows"] = cur.rowcount
+
+            # Finally, commit the transaction
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print(e)
+        finally:
+            cur.close()
+            conn.close()
+            return result
+        
     def Get_Location(self, location_id):
         # filtered_list = [item for item in ESDR_FEEDS if item["id"] == location_id]
 
@@ -177,12 +335,13 @@ class Database:
         cur = conn.cursor()
         result = {}
         sql = (
-                "SELECT l.location_id, l.location_name, f.feed_id "
+                "SELECT l.location_id, l.location_name, l.region_id, r.region_name, f.feed_id "
                 "FROM {0} as l "
                 "JOIN {1} as f on (l.location_id = f.location_id) "
-                "WHERE l.location_id = {2} "
+                "LEFT OUTER JOIN {2} as r on (l.region_id = r.region_id) "
+                "WHERE l.location_id = {3} "
                 "ORDER BY l.location_id, f.feed_id;"
-        ).format(self.AWBA_LOCATIONS, self.AWBA_FEEDS, location_id)
+        ).format(self.AWBA_LOCATIONS, self.AWBA_FEEDS, self.AWBA_REGIONS, location_id)
 
         try:
             cur.execute(sql)
@@ -191,7 +350,9 @@ class Database:
             for row in rows:
                 result["id"] = row[0]
                 result["name"] = row[1]
-                result.setdefault("feedIds", []).append(row[2])
+                result["regionId"] = row[2]
+                result["regionName"] = row[3]
+                result.setdefault("feedIds", []).append(row[4])
         finally:
             cur.close()
             conn.close()
@@ -206,10 +367,11 @@ class Database:
         cur = conn.cursor()
         result = []
         sql = (
-                "SELECT l.location_id, l.location_name, f.feed_id "
+                "SELECT l.location_id, l.location_name, l.region_id, r.region_name, f.feed_id "
                 "FROM {0} as l "
                 "JOIN {1} as f on (l.location_id = f.location_id) "
-        ).format(self.AWBA_LOCATIONS, self.AWBA_FEEDS)
+                "LEFT OUTER JOIN {2} as r on (l.region_id = r.region_Id) "
+        ).format(self.AWBA_LOCATIONS, self.AWBA_FEEDS, self.AWBA_REGIONS)
 
         # build where clause based on optional search parameters
         search_cond = ""
@@ -239,7 +401,91 @@ class Database:
             sql = sql + "WHERE " + search_cond
 
         sql = sql + " ORDER BY l.location_id, f.feed_id;"
-        print(sql)
+
+        try:
+            cur.execute(sql)
+            rows = cur.fetchall()
+            curId = -1
+            item = {}
+
+            for row in rows:
+                # If this is a new LocationId, create a new record
+                if (row[0] != curId):
+                    # Set new curId
+                    curId = row[0]
+
+                    # Add current item if it's a Location
+                    if (item != {}):
+                        result.append(item)
+                        item = {}
+                    
+                    # Assign basic values
+                    item["id"] = row[0]
+                    item["name"] = row[1]
+                    item["regionId"] = row[2]
+                    item["regionName"] = row[3]
+
+                # Add the field ID
+                item.setdefault("feedIds", []).append(row[4])
+
+            # Add the last item
+            if (item != {}):
+                result.append(item)
+        finally:
+            cur.close()
+            conn.close()
+            return result
+
+    def Get_Region(self, region_id):
+        conn = self.New_Connection()
+        cur = conn.cursor()
+        result = {}
+        sql = (
+                "SELECT r.region_id, r.region_name, l.location_id "
+                "FROM {0} as r "
+                "LEFT OUTER JOIN {1} as l on (r.region_id = l.region_id) "
+                "WHERE r.region_id = {2} "
+                "ORDER BY r.region_id, l.location_id;"
+        ).format(self.AWBA_REGIONS, self.AWBA_LOCATIONS, region_id)
+
+        try:
+            cur.execute(sql)
+            rows = cur.fetchall()
+
+            for row in rows:
+                result["id"] = row[0]
+                result["name"] = row[1]
+                result.setdefault("locationIds", []).append(row[2])
+        finally:
+            cur.close()
+            conn.close()
+            if result != {}:
+                return result
+            else:
+                return None
+
+    def Get_Regions(self, name):
+        # return ESDR_FEEDS
+        conn = self.New_Connection()
+        cur = conn.cursor()
+        result = []
+        sql = (
+                "SELECT r.region_id, r.region_name, l.location_id "
+                "FROM {0} as r "
+                "LEFT OUTER JOIN {1} as l on (r.region_id = l.region_id) "
+        ).format(self.AWBA_REGIONS, self.AWBA_LOCATIONS)
+
+        # build where clause based on optional search parameters
+        search_cond = ""
+
+        if not(name is None):
+            search_cond = "(r.region_name ilike '{0}')".format(name)
+
+        # Finish sql statement
+        if (search_cond != ""):
+            sql = sql + "WHERE " + search_cond
+
+        sql = sql + " ORDER BY r.region_id, l.location_id;"
 
         try:
             cur.execute(sql)
@@ -262,8 +508,8 @@ class Database:
                     item["id"] = row[0]
                     item["name"] = row[1]
 
-                # Add the field ID
-                item.setdefault("feedIds", []).append(row[2])
+                # Add the location ID
+                item.setdefault("locationIds", []).append(row[2])
 
             # Add the last item
             if (item != {}):
@@ -292,6 +538,17 @@ class Database:
 
             cur.execute(sql, (location.name, location_id))
             result["location_rows"] = cur.rowcount
+
+            if (location.regionId is None):
+                # Update the Region in the Location table
+                sql = (
+                        "UPDATE {0}"
+                        " SET region_id = %s"
+                        " WHERE (location_id = %s);"
+                ).format(self.AWBA_LOCATIONS)
+
+                cur.execute(sql, (location.regionId, location_id))
+                result["location_rows"] = cur.rowcount
 
             if result["location_rows"] > 0:
                 # Delete the feeds for this location
@@ -328,6 +585,36 @@ class Database:
             conn.close()
             return result
         
+    # Updates a region within the database
+    def Update_Region(self, region_id: int, region: Region):
+        conn = self.New_Connection()
+        cur = conn.cursor()
+        result = {"region_rows": 0}
+
+        try:
+            # Update the Regions table
+            sql = (
+                    "UPDATE {0}"
+                    " SET region_name = %s"
+                    " WHERE (region_id = %s);"
+            ).format(self.AWBA_REGIONS)
+
+            cur.execute(sql, (region.name, region_id))
+            result["region_rows"] = cur.rowcount
+
+            # Finally, commit the transaction
+            if (result["region_rows"] > 0):
+                conn.commit()
+            else:
+                raise ProgrammingError("No regions updated")
+        except Exception as e:
+            conn.rollback()
+            print(e)
+        finally:
+            cur.close()
+            conn.close()
+            return result
+        
     # Make sure the database tables exist
     # If they don't, create them so they're available
     def Verify_Tables(self):
@@ -335,9 +622,16 @@ class Database:
         conn = self.New_Connection()
 
         try:
+            if not(self.Check_Table(conn, self.AWBA_REGIONS)):
+                self.Create_Regions_Table(conn)
             if not(self.Check_Table(conn, self.AWBA_LOCATIONS)):
-                self.Create_Location_Table(conn)
+                self.Create_Locations_Table(conn)
             if not(self.Check_Table(conn, self.AWBA_FEEDS)):
                 self.Create_Feeds_Table(conn)
+
+            # Add region column to awba_locations
+            if not(self.Check_Column(conn, self.AWBA_LOCATIONS, 'region_id')):
+                self.Add_Table_Column(conn, self.AWBA_LOCATIONS, 'region_id', 'integer')
+                self.Add_Column_Constraint(conn, self.AWBA_LOCATIONS, 'fk_region', 'FOREIGN KEY (region_id) REFERENCES {0}'.format(self.AWBA_REGIONS))
         finally:
             conn.close()

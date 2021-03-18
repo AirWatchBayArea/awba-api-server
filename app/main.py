@@ -2,7 +2,7 @@ import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .backend.database import Database
-from .routes import feeds, locations, user_reports
+from .routes import feeds, locations, regions, user_reports
 
 tags_metadata = [
     {
@@ -12,6 +12,10 @@ tags_metadata = [
     {
         "name": "Locations",
         "description": "Manage locations and feeds which are monitored.",
+    },
+    {
+        "name": "Regions",
+        "description": "Manage regions and their respective locations.",
     },
     {
         "name": "User Reports",
@@ -42,4 +46,5 @@ app.add_middleware(
 
 app.include_router(feeds.router)
 app.include_router(locations.router)
+app.include_router(regions.router)
 app.include_router(user_reports.router)

@@ -4,6 +4,8 @@ from typing import Dict, List, Optional
 class Location(BaseModel):
     id: Optional[int]
     name: str
+    regionId: Optional[int]
+    regionName: Optional[str]
     feedIds: List[int]
 
 class LocationItems(BaseModel):
@@ -40,3 +42,13 @@ class FeedData(BaseModel):
     lastUpload: str
     minTimeSecs: float
     maxtimeSecs: float
+
+class Region(BaseModel):
+    id: Optional[int]
+    name: str
+    locationIds: Optional[List[int]]
+    
+class RegionItems(BaseModel):
+    Succeeded: List[Region]
+    Failed: List[Region]
+    
