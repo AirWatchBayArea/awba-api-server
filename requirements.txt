@@ -1,4 +1,5 @@
 fastapi
+fastapi-versioning
 uvicorn
 aiohttp
 requests

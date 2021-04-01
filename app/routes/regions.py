@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
+from fastapi_versioning import version
 from typing import List
 from ..services.database import DatabaseService
 from ..models.esdr import *
@@ -11,6 +12,7 @@ service = DatabaseService()
     name="Get Regions",
     description="Returns the list of available regions with their location IDs",
     response_model=List[Region])
+@version(1)
 async def get_regions(name: Optional[str] = Query(
                             None, 
                             title="Region Name (Optional)", 
@@ -24,6 +26,7 @@ async def get_regions(name: Optional[str] = Query(
 #     name="Add Regions",
 #     description="Adds new region(s) with a list of location IDs",
 #     responses={200: {"model": RegionItems}, 500: {}})
+# @version(1)
 async def add_region(regions: List[Region]):
     result = service.Add_Region(regions)
 
@@ -37,6 +40,7 @@ async def add_region(regions: List[Region]):
 #     name="Update a region",
 #     description="Updates a region with a list of location IDs",
 #     responses={200: {"model": Region}, 500: {}})
+# @version(1)
 async def update_region(regionId: int, region: Region):
     result = service.Update_Region(regionId, region)
 
@@ -51,6 +55,7 @@ async def update_region(regionId: int, region: Region):
 #     name="Delete a Region",
 #     description="Deletes a region from the database",
 #     responses={404: {}})
+# @version(1)
 async def delete_region(regionId: int):
     print("Deleting region: {0}",format(regionId))
     result = service.Delete_Region(regionId)
@@ -63,6 +68,7 @@ async def delete_region(regionId: int):
     name="Get a Region",
     description="Returns a region with its location IDs",
     responses={200: {"model": Region}, 404: {}})
+@version(1)
 async def get_region(regionId: int):
     result = service.Get_Region(regionId)
 

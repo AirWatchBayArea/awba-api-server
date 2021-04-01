@@ -1,6 +1,7 @@
 import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_versioning import VersionedFastAPI
 from .backend.database import Database
 from .routes import feeds, locations, regions, user_reports
 
@@ -25,8 +26,7 @@ tags_metadata = [
 
 app = FastAPI(debug=True,
     openapi_tags=tags_metadata,
-    title="AWBA API Server", 
-    version="1.0.0")
+    title="AWBA API Server")
 
 origins = ["*"]
 
@@ -48,3 +48,8 @@ app.include_router(feeds.router)
 app.include_router(locations.router)
 app.include_router(regions.router)
 app.include_router(user_reports.router)
+
+app = VersionedFastAPI(app,
+    version_format='{major}',
+    prefix_format='/api/v{major}')
+

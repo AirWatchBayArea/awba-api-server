@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi_versioning import version
 from typing import List
 from ..services.esdr import EsdrService
 from ..models.esdr import *
@@ -12,6 +13,7 @@ service = EsdrService()
     name="Get Single Feed Data",
     description="Returns data for a single feed",
     responses={200: {"model": FeedData}, 404: {}})
+@version(1)
 async def get_feed_data(feedId: int):
     result = service.Get_Feed_Data(feedId)
 
@@ -25,6 +27,7 @@ async def get_feed_data(feedId: int):
     name="Get Location Feed Data",
     description="Returns data for all feeds in a particular location",
     responses={200: {"model": List[FeedData]}, 404: {}})
+@version(1)
 async def get_location_data(locationId: int):
     result = await service.Get_Location_Data_Async(locationId)
 
@@ -38,6 +41,7 @@ async def get_location_data(locationId: int):
 #     name="Get location data (synchronously)",
 #     description="Returns data for all feeds in a particular location",
 #     responses={200: {"model": List[FeedData]}, 404: {}})
+# @version(1)
 async def get_location_data_sync(locationId: int):
     result = service.Get_Location_Data_Sync(locationId)
 
@@ -51,6 +55,7 @@ async def get_location_data_sync(locationId: int):
     name="Get Region Feed Data",
     description="Returns data for all feeds in a particular region",
     responses={200: {"model": List[FeedData]}, 404: {}})
+@version(1)
 async def get_region_data(regionId: int):
     result = await service.Get_Region_Data_Async(regionId)
 
@@ -64,6 +69,7 @@ async def get_region_data(regionId: int):
     name="Get Wind Data",
     description="Returns data for all wind feeds",
     responses={200: {"model": List[FeedData]}, 404: {}})
+@version(1)
 async def get_wind_data():
     result = await service.Get_Wind_Data_Async()
 
@@ -77,6 +83,7 @@ async def get_wind_data():
 #     name="Get wind data (synchronously)",
 #     description="Returns data for all wind feeds",
 #     responses={200: {"model": List[FeedData]}, 404: {}})
+# @version(1)
 async def get_wind_data_sync():
     result = service.Get_Wind_Data_Sync()
 
