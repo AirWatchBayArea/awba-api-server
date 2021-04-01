@@ -30,11 +30,11 @@ async def get_locations(name: Optional[str] = Query(
     # Return locations which match
     return service.Get_Locations(name, feedIdList)
 
-# @router.post('/locations',
-#     tags=["Locations"],
-#     name="Add locations",
-#     description="Adds new location(s) with a list of feed IDs",
-#     responses={200: {"model": LocationItems}, 500: {}})
+@router.post('/locations',
+    tags=["Locations"],
+    name="Add locations",
+    description="Adds new location(s) with a list of feed IDs",
+    responses={200: {"model": LocationItems}, 500: {}})
 async def add_location(locations: List[Location]):
     result = service.Add_Locations(locations)
 
@@ -43,11 +43,11 @@ async def add_location(locations: List[Location]):
     else:
         raise HTTPException(status_code=500, detail="Unable to add locations")
 
-# @router.put('/locations/{locationId}',
-#     tags=["Locations"],
-#     name="Update a Location",
-#     description="Updates a location with a list of feed IDs",
-#     responses={200: {"model": Location}, 500: {}})
+@router.put('/locations/{locationId}',
+    tags=["Locations"],
+    name="Update a Location",
+    description="Updates a location with a list of feed IDs",
+    responses={200: {"model": Location}, 500: {}})
 async def update_location(locationId: int, location: Location):
     result = service.Update_Location(locationId, location)
 
@@ -57,11 +57,11 @@ async def update_location(locationId: int, location: Location):
     else:
         raise HTTPException(status_code=500, detail="Unable to update location")
 
-# @router.delete('/locations/{locationId}',
-#     tags=["Locations"],
-#     name="Delete a Location",
-#     description="Deletes a location from the database",
-#     responses={404: {}})
+@router.delete('/locations/{locationId}',
+    tags=["Locations"],
+    name="Delete a Location",
+    description="Deletes a location from the database",
+    responses={404: {}})
 async def delete_location(locationId: int):
     print("Deleting location: {0}",format(locationId))
     result = service.Delete_Location(locationId)
