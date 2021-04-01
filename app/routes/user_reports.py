@@ -20,13 +20,13 @@ async def get_user_reports():
     else:
         return HTTPException(status_code=404, details="No data found")
 
-@router.get('/user-reports/location/{location_id}',
+@router.get('/user-reports/location/{locationId}',
     tags=["User Reports"],
     name="Get user reports for a given location",
     description="Returns user-submitted smell reports for a specific location",
     responses={200: {"model": List[UserReport]}, 204: {}, 404: {}})
-async def get_user_reports(location_id: int):
-    result = await service.Get_User_Reports_Location_Sync(location_id)
+async def get_user_reports(locationId: int):
+    result = await service.Get_User_Reports_Location_Sync(locationId)
 
     if result != None:
         return result
