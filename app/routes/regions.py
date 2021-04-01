@@ -19,11 +19,11 @@ async def get_regions(name: Optional[str] = Query(
     # Return locations which match
     return service.Get_Regions(name)
 
-@router.post('/regions',
-    tags=["Regions"],
-    name="Add Regions",
-    description="Adds new region(s) with a list of location IDs",
-    responses={200: {"model": RegionItems}, 500: {}})
+# @router.post('/regions',
+#     tags=["Regions"],
+#     name="Add Regions",
+#     description="Adds new region(s) with a list of location IDs",
+#     responses={200: {"model": RegionItems}, 500: {}})
 async def add_region(regions: List[Region]):
     result = service.Add_Region(regions)
 
@@ -32,11 +32,11 @@ async def add_region(regions: List[Region]):
     else:
         raise HTTPException(status_code=500, detail="Unable to add regions")
 
-@router.put('/regions/{regionId}',
-    tags=["Regions"],
-    name="Update a region",
-    description="Updates a region with a list of location IDs",
-    responses={200: {"model": Region}, 500: {}})
+# @router.put('/regions/{regionId}',
+#     tags=["Regions"],
+#     name="Update a region",
+#     description="Updates a region with a list of location IDs",
+#     responses={200: {"model": Region}, 500: {}})
 async def update_region(regionId: int, region: Region):
     result = service.Update_Region(regionId, region)
 
@@ -46,11 +46,11 @@ async def update_region(regionId: int, region: Region):
     else:
         raise HTTPException(status_code=500, detail="Unable to update region")
 
-@router.delete('/regions/{regionId}',
-    tags=["Regions"],
-    name="Delete a Region",
-    description="Deletes a region from the database",
-    responses={404: {}})
+# @router.delete('/regions/{regionId}',
+#     tags=["Regions"],
+#     name="Delete a Region",
+#     description="Deletes a region from the database",
+#     responses={404: {}})
 async def delete_region(regionId: int):
     print("Deleting region: {0}",format(regionId))
     result = service.Delete_Region(regionId)
